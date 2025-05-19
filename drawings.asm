@@ -45,10 +45,8 @@ life3_x dw 36
 
 .CODE
 
-;-----------------------
-; Draw Horizontal Line
-; CX = X start, DX = Y, BX = width
-;-----------------------
+
+; A function that draws a horizontal line for the board
 draw_horizontal_line proc
 	push bp
 	mov bp,sp
@@ -71,13 +69,8 @@ draw_h_loop:
     ret 2
 draw_horizontal_line endp
 
-;-----------------------
-; Draw Vertical Line
-; CX = X, DX = Y start, BX = height
-;-----------------------
 
-
-
+; A function that draws the player board
 draw_rectangle proc
     push ax
     push bx
@@ -85,26 +78,26 @@ draw_rectangle proc
     push dx
     push si
 
-    ; Compute bottom Y coordinate: bottom = y + height
-    mov ax, [board_y]      ; Load y into AX
-    add ax, [height] ; AX = y + height
-    mov si, ax       ; SI now holds the bottom coordinate
 
-    mov dx, [board_y]      ; Initialize DX to starting y
+    mov ax, [board_y]      
+    add ax, [height] 
+    mov si, ax       ; si now holds the bottom coordinate
+
+    mov dx, [board_y]     
 
 fill_loop:
     mov cx, [board_x]      ; Starting x for the horizontal line
-    mov bx, [width1] ; Width of the rectangle (number of pixels)
+    mov bx, [width1] 
 	
 	
 	mov ah,0
 	mov al,[board_color]
-	push ax
-    call draw_horizontal_line  ; Draw one horizontal line at row DX
+	push ax ; push the color
+    call draw_horizontal_line  
 
     inc dx         ; Move to the next row
-    cmp dx, si     ; Compare current row with bottom coordinate
-    jl fill_loop   ; If DX < bottom, continue the loop
+    cmp dx, si     
+    jl fill_loop   ; If dx < bottom countinue the loop
 
     pop si
     pop dx
@@ -117,7 +110,7 @@ draw_rectangle endp
 
 
 
-
+; A function that draws the ball
 draw_ball proc
 	push ax
 	push bx
@@ -134,7 +127,8 @@ draw_ball proc
 	
 	mov si, dx
 	add si,[ball_size]
-	
+
+; Loops around the ball row and columns	
 ball_row:
 	mov cx, [ball_x]
 	
@@ -158,7 +152,7 @@ ball_column:
 draw_ball endp
 
 
-
+; A function that draws the life
 draw_life proc
 	push bp 
 	mov bp,sp
@@ -170,7 +164,7 @@ draw_life proc
 	
 	mov al,[ball_color]
 
-	
+	; Uses bp as parameters to draw them
 	mov cx,[bp+6]
 	mov dx,[bp+4]
 	mov bx,cx
@@ -202,12 +196,12 @@ life_column:
 	ret 4
 draw_life endp
 
+; A function that draws all of the lifes
 draw_all_lifes proc
     push ax
 
     mov ax, [lifes_left]
 
-    ; --- Life 1 ---
     cmp ax, 1
     jl erase_life1  ; if lifes_left < 1
     ; draw life1
@@ -254,7 +248,7 @@ draw_all_lifes_end:
     ret
 draw_all_lifes endp
 
-
+; A function that erases a life
 erase_life proc
     push bp
     mov bp, sp
@@ -267,28 +261,27 @@ erase_life proc
     
     mov al, [black_color]
     
-    ; CORRECT PARAMETER ACCESS:
-    mov cx, [bp+6]    ; X coordinate (first pushed)
-    mov dx, [bp+4]    ; Y coordinate (second pushed)
+    mov cx, [bp+6]    
+    mov dx, [bp+4]    
     
-    ; Calculate boundaries
+
     mov bx, cx
-    add bx, 6          ; Right edge (X + width)
+    add bx, 6          ; Right edge
     mov si, dx
-    add si, 6          ; Bottom edge (Y + height)
+    add si, 6          ; Left edge
     
 erase_life_row:
-    mov cx, [bp+6]     ; Reset X position
+    mov cx, [bp+6]     
     
 erase_life_column:
     mov ah, 0ch        ; Put pixel function
-    int 10h            ; Draw black pixel
+    int 10h            
     
-    inc cx             ; Move right
+    inc cx            
     cmp cx, bx
     jb erase_life_column
     
-    inc dx             ; Move down
+    inc dx            
     cmp dx, si
     jb erase_life_row
     
@@ -298,9 +291,10 @@ erase_life_column:
     pop bx
     pop ax
     pop bp
-    ret 4              ; Clean up 4 bytes (2 words)
+    ret 4            
 erase_life endp
 
+; S function that takes the board previous x erases him and draws him again
 erase_board proc
     push ax
     push bx
@@ -319,19 +313,16 @@ erase_board proc
     ; Set board_x to previous position for erasing
     mov ax, [prev_board_x]
     mov [board_x], ax
-    
-    ; Set color to black
+	
     mov al, [black_color]
     mov [board_color], al
     
     ; Draw a black rectangle at previous position
     call draw_rectangle
     
-    ; Restore original color
     pop ax
     mov [board_color], al
-    
-    ; Restore original board_x
+
     pop ax
     mov [board_x], ax
     
@@ -344,7 +335,7 @@ erase_board proc
 erase_board endp
 
 
-
+; A function that erases a block
 erase_block proc
 	push bp
 	mov bp,sp
@@ -356,9 +347,9 @@ erase_block proc
 	mov al, [black_color]  ; Set color to black
 
 	push ax
-	push [bp+6]  ; X coordinate
-	push [bp+4]  ; Y coordinate
-	call draw_block  ; Redraw block in black
+	push [bp+6]  
+	push [bp+4]  
+	call draw_block  ; Redraw block at given position with black color
 
 	pop dx
 	pop cx
@@ -370,8 +361,7 @@ erase_block endp
 
 
 
-
-; Add this new procedure to erase the ball
+; A function that erases the ball
 erase_ball proc
     push ax
     push bx
@@ -379,7 +369,7 @@ erase_ball proc
     push dx
     push si
     
-    ; Store original ball color
+
     mov al, [ball_color]
     push ax
     
@@ -390,17 +380,17 @@ erase_ball proc
     mov cx, [ball_x]
     mov dx, [ball_y]
     mov bx, cx
-    add bx, 6    ; Ball width = 4
+    add bx, 6    
     
     mov si, dx
-    add si, 6    ; Ball height = 4
-    
+    add si, 6    
+	
 erase_ball_row:
     mov cx, [ball_x]
     
 erase_ball_column:
     mov ah, 0ch  ; Put pixel function
-    int 10h      ; Draw black pixel
+    int 10h     
     
     inc cx
     cmp cx, bx
@@ -423,13 +413,7 @@ erase_ball_column:
 erase_ball endp
 
 
-
-
-
-
-
-
-
+; A function that draws the ball using bp as parameters
 draw_block proc
 	push bp
 	mov bp,sp
@@ -438,11 +422,14 @@ draw_block proc
     push cx
     push dx
     push si
+	
+	mov ax,[bp+6]
+	cmp ax,-1
+	je skip_draw_block
 
     mov ax, [bp+4]
     add ax, [block_hight]
     mov si, ax
-
     mov dx, [bp+4]
 
 block_loop:
@@ -450,11 +437,12 @@ block_loop:
     mov bx, [block_width]
 	push [bp+8]
     call draw_horizontal_line
-
+	
     inc dx
     cmp dx, si
     jl block_loop
-
+	
+skip_draw_block:
     pop si
     pop dx
     pop cx
@@ -465,7 +453,7 @@ block_loop:
 draw_block endp
 
 
-
+; A function that takes the block matrix and uses each position as parameters to draw the block and also adds him colors
 draw_all_blocks proc
     push ax
     push bx
@@ -532,7 +520,7 @@ skip_row_update:
     ret
 draw_all_blocks endp
 
-
+; A function that draws the score
 display_score proc
     push ax
     push bx
@@ -548,25 +536,25 @@ display_score proc
 conv_loop:
     mov dx, 0
     mov bx, 10
-    div bx           ; AX = quotient, DX = remainder
-    add dl, '0'      ; Convert to ASCII
+    div bx           
+    add dl, '0'      
     mov [si], dl
     dec si
     loop conv_loop
     
-    ; Set cursor position (top-left corner)
+    
     mov ah, 02h
     mov bh, 0        ; Page 0
-    mov dh, 1        ; Row 0
-    mov dl, 68        ; Column 0
+    mov dh, 1        ; Row 1
+    mov dl, 68        ; Column 68
     int 10h
     
-    ; Display "Score: " text
+    ; Display Score:  text
     mov ah, 09h
     mov dx, offset score_text
     int 21h
     
-    ; Display score digits
+    ; Display Score digits
     mov dx, offset score_digits
     int 21h
     

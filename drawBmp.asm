@@ -7,6 +7,7 @@
 ;filename db 'gmovwin.bmp',0
 openingName db 'opening.bmp',0
 endingName db 'ending.bmp',0
+pauseName db 'pause.bmp',0
 filehandle dw ?
 Header db 54 dup (0)
 Palette db 256*4 dup (0)
@@ -47,6 +48,22 @@ OpenFile_end proc
     int 21h
     ret
 OpenFile_end endp
+
+OpenFile_pause proc
+    ; Open file
+    mov ah, 3Dh
+    xor al, al
+    mov dx, offset pauseName
+    int 21h
+    jc pauseError
+    mov [filehandle], ax
+    ret
+    pauseError :
+    mov dx, offset ErrorMsg
+    mov ah, 9h
+    int 21h
+    ret
+OpenFile_pause endp
 
 ReadHeader proc
     ; Read BMP file header, 54 bytes
@@ -163,3 +180,17 @@ EndingScreen proc
     ret
 
 EndingScreen endp
+
+PauseScreen proc
+	; Graphic mode
+    mov ax, 13h
+    int 10h
+    ; Process BMP file
+    call OpenFile_pause
+    call ReadHeader
+    call ReadPalette
+    call CopyPal
+    call CopyBitmap
+    ret
+
+PauseScreen endp
